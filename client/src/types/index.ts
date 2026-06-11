@@ -34,6 +34,8 @@ export interface Instrument {
   last_maintenance_date?: string;
   description: string;
   image_url?: string;
+  admin_id?: string;
+  admin_name?: string;
   current_temperature?: number;
   temperature_min?: number;
   temperature_max?: number;

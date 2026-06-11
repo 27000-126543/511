@@ -9,7 +9,7 @@ import {
 } from '@ant-design/icons';
 import { notificationsApi } from '../api';
 import { Notification } from '../types';
-import dayjs from 'dayjs';
+import dayjs from '../utils/dayjs';
 
 const { Option } = Select;
 
@@ -152,7 +152,7 @@ const Notifications: React.FC = () => {
                           </Tag>
                         </Space>
                         <span style={{ color: '#999', fontSize: 12 }}>
-                          {dayjs(item.created_at).fromNow()}
+                          {item.created_at ? dayjs(item.created_at).fromNow() : ""}
                         </span>
                       </div>
                     }
@@ -160,7 +160,7 @@ const Notifications: React.FC = () => {
                       <div>
                         <p style={{ color: '#666', margin: '4px 0' }}>{item.content}</p>
                         <span style={{ color: '#ccc', fontSize: 12 }}>
-                          {dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss')}
+                          {item.created_at ? dayjs(item.created_at).format('YYYY-MM-DD HH:mm:ss') : ''}
                         </span>
                       </div>
                     }

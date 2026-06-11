@@ -3,11 +3,12 @@ import {
   Card, Form, Select, DatePicker, Input, Button, message, Row, Col,
   Space, Alert, List, Progress,
 } from 'antd';
-import { ArrowLeftOutlined, ThunderboltOutlined, CalendarOutlined, WarningOutlined } from '@ant-design/icons';
+import { ArrowLeftOutlined, ThunderboltOutlined, WarningOutlined } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import { instrumentsApi, reservationsApi } from '../api';
 import { Instrument, RecommendedSlot } from '../types';
-import dayjs from 'dayjs';
+import dayjs from '../utils/dayjs';
+import type { Dayjs } from 'dayjs';;
 
 const { Option } = Select;
 const { TextArea } = Input;
@@ -22,6 +23,8 @@ const ReservationForm: React.FC = () => {
   const [conflictInfo, setConflictInfo] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [recommendLoading, setRecommendLoading] = useState(false);
+  const [estimatedCost, setEstimatedCost] = useState(0);
+  const [timeRange, setTimeRange] = useState<[Dayjs | null, Dayjs | null] | null>(null);
 
   useEffect(() => {
     loadInstruments();
@@ -71,66 +74,63 @@ const ReservationForm: React.FC = () => {
     if (inst) {
       loadRecommendations(inst.id, 2);
     }
-    form.setFieldsValue({ start_time: null, end_time: null });
+    setTimeRange(null);
     setConflictInfo(null);
+    setEstimatedCost(0);
   };
 
-  const handleTimeChange = async (value: any) => {
-    if (!value || value.length < 2) return;
-    
+  const handleTimeChange = (values: [Dayjs | null, Dayjs | null] | null) => {
+    setTimeRange(values);
+    if (values && values[0] && values[1] && selectedInstrument) {
+      setEstimatedCost(Math.round(values[1].diff(values[0], 'hour', true) * selectedInstrument.hourly_rate * 100) / 100);
+    } else {
+      setEstimatedCost(0);
+    }
+    if (!values || !values[0] || !values[1]) { setConflictInfo(null); return; }
     const instId = form.getFieldValue('instrument_id');
     if (!instId) return;
-
-    try {
-      const result: any = await reservationsApi.checkConflict({
-        instrument_id: instId,
-        start_time: value[0].toISOString(),
-        end_time: value[1].toISOString(),
-      });
-      setConflictInfo(result);
-    } catch (error) {
-      console.error('Failed to check conflict:', error);
-    }
+    reservationsApi.checkConflict({
+      instrument_id: instId,
+      start_time: values[0].toISOString(),
+      end_time: values[1].toISOString(),
+    }).then((r: any) => setConflictInfo(r)).catch(() => {});
   };
 
   const handleSlotSelect = (slot: RecommendedSlot) => {
-    form.setFieldsValue({
-      start_time: dayjs(slot.start_time),
-      end_time: dayjs(slot.end_time),
-    });
+    const s = dayjs(slot.start_time);
+    const e = dayjs(slot.end_time);
+    setTimeRange([s, e]);
+    if (selectedInstrument) {
+      setEstimatedCost(Math.round(e.diff(s, 'hour', true) * selectedInstrument.hourly_rate * 100) / 100);
+    }
     setConflictInfo({ hasConflict: false, conflictingReservations: [] });
   };
 
   const handleSubmit = async () => {
     try {
       const values = await form.validateFields();
+      if (!timeRange || !timeRange[0] || !timeRange[1]) {
+        message.warning('请选择预约时段');
+        return;
+      }
       setLoading(true);
-
       const data = {
         instrument_id: values.instrument_id,
-        start_time: values.start_time.toISOString(),
-        end_time: values.end_time.toISOString(),
+        start_time: timeRange[0].toISOString(),
+        end_time: timeRange[1].toISOString(),
         purpose: values.purpose || '',
       };
-
       await reservationsApi.create(data);
       message.success('预约成功');
       navigate('/reservations');
     } catch (error: any) {
-      message.error(error.error || '预约失败');
+      if (error?.errorFields) return;
+      message.error(error?.error || '预约失败');
     } finally {
       setLoading(false);
     }
   };
 
-  const estimateCost = () => {
-    if (!selectedInstrument) return 0;
-    const startTime = form.getFieldValue('start_time');
-    const endTime = form.getFieldValue('end_time');
-    if (!startTime || !endTime) return 0;
-    const hours = endTime.diff(startTime, 'hour', true);
-    return Math.round(hours * selectedInstrument.hourly_rate * 100) / 100;
-  };
 
   return (
     <div>
@@ -145,7 +145,7 @@ const ReservationForm: React.FC = () => {
       <Row gutter={16}>
         <Col span={16}>
           <Card title="新建预约">
-            <Form form={form} layout="vertical" onFinish={handleSubmit}>
+            <Form form={form} layout="vertical">
               <Form.Item
                 name="instrument_id"
                 label="选择仪器"
@@ -188,16 +188,12 @@ const ReservationForm: React.FC = () => {
               )}
 
               <Form.Item
-                name="time_range"
                 label="预约时段"
-                rules={[{ required: true, message: '请选择预约时间' }]}
+                required
               >
                 <DatePicker.RangePicker
-                  showTime={{
-                    showMinute: false,
-                    format: 'HH:mm',
-                    defaultValue: [dayjs('09:00', 'HH:mm'), dayjs('11:00', 'HH:mm')],
-                  }}
+                  value={timeRange as [Dayjs, Dayjs]}
+                  showTime={{ format: 'HH:mm' }}
                   format="YYYY-MM-DD HH:mm"
                   style={{ width: '100%' }}
                   onChange={handleTimeChange}
@@ -214,7 +210,7 @@ const ReservationForm: React.FC = () => {
                     showIcon
                     style={{ marginBottom: 16 }}
                   />
-                ) : form.getFieldValue('time_range') ? (
+                ) : timeRange && timeRange[0] && timeRange[1] ? (
                   <Alert
                     message="时段可用"
                     description="该时段可以预约"
@@ -231,7 +227,7 @@ const ReservationForm: React.FC = () => {
                   description={
                     <div>
                       <span style={{ fontSize: 20, fontWeight: 600, color: '#fa8c16' }}>
-                        ¥{estimateCost()}
+                        ¥{estimatedCost}
                       </span>
                       <span style={{ color: '#999', marginLeft: 8 }}>
                         （实际费用以使用时长为准）
@@ -250,7 +246,7 @@ const ReservationForm: React.FC = () => {
 
               <Form.Item style={{ marginBottom: 0 }}>
                 <Space>
-                  <Button type="primary" htmlType="submit" loading={loading} disabled={conflictInfo?.hasConflict}>
+                  <Button type="primary" onClick={handleSubmit} loading={loading} disabled={conflictInfo?.hasConflict}>
                     提交预约
                   </Button>
                   <Button onClick={() => navigate('/reservations')}>取消</Button>

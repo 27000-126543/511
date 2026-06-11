@@ -10,7 +10,7 @@ const router = Router();
 router.get('/', authMiddleware, (req, res) => {
   const { type, status, keyword } = req.query;
   
-  let query = 'SELECT * FROM instruments WHERE 1=1';
+  let query = 'SELECT i.*, u.name as admin_name FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE 1=1';
   const params: any[] = [];
 
   if (type && type !== 'all') {
@@ -29,7 +29,7 @@ router.get('/', authMiddleware, (req, res) => {
 
   query += ' ORDER BY created_at DESC';
 
-  const instruments = db.prepare(query).all(...params) as Instrument[];
+  const instruments = db.prepare(query).all(...params) as (Instrument & { admin_name?: string })[];
   res.json(instruments);
 });
 
@@ -49,7 +49,7 @@ router.get('/:id', authMiddleware, (req, res) => {
 });
 
 router.post('/', authMiddleware, requireRole('instrument_admin', 'institute_leader'), (req: AuthRequest, res) => {
-  const { name, type, model, location, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max } = req.body;
+  const { name, type, model, location, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max, admin_id } = req.body;
 
   if (!name || !type) {
     return res.status(400).json({ error: '仪器名称和类型不能为空' });
@@ -59,18 +59,18 @@ router.post('/', authMiddleware, requireRole('instrument_admin', 'institute_lead
   const createdAt = dayjs().toISOString();
 
   const stmt = db.prepare(`
-    INSERT INTO instruments (id, name, type, model, location, status, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max, current_temperature, created_at)
-    VALUES (?, ?, ?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO instruments (id, name, type, model, location, status, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max, admin_id, current_temperature, created_at)
+    VALUES (?, ?, ?, ?, ?, 'available', ?, ?, ?, ?, ?, ?, ?, ?)
   `);
   
-  stmt.run(id, name, type, model || '', location || '', hourly_rate || 0, maintenance_cycle_days || 30, description || '', temperature_min || 15, temperature_max || 30, 22, createdAt);
+  stmt.run(id, name, type, model || '', location || '', hourly_rate || 0, maintenance_cycle_days || 30, description || '', temperature_min || 15, temperature_max || 30, admin_id || null, 22, createdAt);
 
   const newInstrument = db.prepare('SELECT * FROM instruments WHERE id = ?').get(id) as Instrument;
   res.status(201).json(newInstrument);
 });
 
 router.put('/:id', authMiddleware, requireRole('instrument_admin', 'institute_leader'), (req: AuthRequest, res) => {
-  const { name, type, model, location, status, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max } = req.body;
+  const { name, type, model, location, status, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max, admin_id } = req.body;
 
   const existing = db.prepare('SELECT * FROM instruments WHERE id = ?').get(req.params.id) as Instrument | undefined;
   if (!existing) {
@@ -81,7 +81,7 @@ router.put('/:id', authMiddleware, requireRole('instrument_admin', 'institute_le
     UPDATE instruments SET 
       name = ?, type = ?, model = ?, location = ?, status = ?, 
       hourly_rate = ?, maintenance_cycle_days = ?, description = ?,
-      temperature_min = ?, temperature_max = ?
+      temperature_min = ?, temperature_max = ?, admin_id = ?
     WHERE id = ?
   `);
 
@@ -96,6 +96,7 @@ router.put('/:id', authMiddleware, requireRole('instrument_admin', 'institute_le
     description !== undefined ? description : existing.description,
     temperature_min !== undefined ? temperature_min : existing.temperature_min,
     temperature_max !== undefined ? temperature_max : existing.temperature_max,
+    admin_id !== undefined ? admin_id : existing.admin_id,
     req.params.id
   );
 

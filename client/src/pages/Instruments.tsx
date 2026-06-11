@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Row, Col, Card, Input, Select, Button, Tag, Modal, Form, message, Space } from 'antd';
 import { SearchOutlined, PlusOutlined, AppstoreOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
-import { instrumentsApi } from '../api';
-import { Instrument } from '../types';
+import { instrumentsApi, usersApi } from '../api';
+import { Instrument, User } from '../types';
 import { useAuthStore } from '../store/auth';
 import dayjs from 'dayjs';
 
@@ -20,6 +20,7 @@ const Instruments: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [types, setTypes] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [adminUsers, setAdminUsers] = useState<User[]>([]);
   const [form] = Form.useForm();
 
   useEffect(() => {
@@ -73,8 +74,14 @@ const Instruments: React.FC = () => {
     return map[status] || status;
   };
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     setIsModalVisible(true);
+    try {
+      const data = await usersApi.list({ role: 'instrument_admin' });
+      setAdminUsers(data as User[]);
+    } catch (error) {
+      console.error('Failed to load admin users:', error);
+    }
   };
 
   const handleModalOk = async () => {
@@ -171,9 +178,14 @@ const Instruments: React.FC = () => {
                 <div style={{ color: '#999', fontSize: 13, marginBottom: 8 }}>
                   {inst.type} · {inst.model}
                 </div>
-                <div style={{ color: '#666', fontSize: 12, marginBottom: 12 }}>
+                <div style={{ color: '#666', fontSize: 12, marginBottom: 4 }}>
                   📍 {inst.location}
                 </div>
+                {inst.admin_name && (
+                  <div style={{ color: '#666', fontSize: 12, marginBottom: 12 }}>
+                    👤 管理员: {inst.admin_name}
+                  </div>
+                )}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ color: '#fa8c16', fontWeight: 600, fontSize: 16 }}>¥{inst.hourly_rate}/h</span>
                   {inst.current_temperature !== undefined && (
@@ -271,6 +283,13 @@ const Instruments: React.FC = () => {
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item name="admin_id" label="管理员">
+            <Select placeholder="请选择管理员" allowClear>
+              {adminUsers.map(u => (
+                <Option key={u.id} value={u.id}>{u.name}</Option>
+              ))}
+            </Select>
+          </Form.Item>
           <Form.Item name="description" label="描述">
             <Input.TextArea rows={3} placeholder="请输入仪器描述" />
           </Form.Item>

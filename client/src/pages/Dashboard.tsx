@@ -17,7 +17,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/auth';
 import { instrumentsApi, reservationsApi, notificationsApi, maintenanceApi, budgetApi, statisticsApi } from '../api';
 import { Instrument, Reservation, Notification, WorkOrder } from '../types';
-import dayjs from 'dayjs';
+import dayjs from '../utils/dayjs';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -343,7 +343,7 @@ const Dashboard: React.FC = () => {
                     description={
                       <div style={{ color: '#999', fontSize: 12 }}>
                         {item.content}
-                        <div style={{ marginTop: 4 }}>{dayjs(item.created_at).fromNow()}</div>
+                        <div style={{ marginTop: 4 }}>{item.created_at ? dayjs(item.created_at).fromNow() : ""}</div>
                       </div>
                     }
                   />

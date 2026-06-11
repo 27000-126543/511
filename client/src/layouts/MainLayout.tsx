@@ -24,10 +24,11 @@ const { Header, Sider, Content } = Layout;
 const roleMenuItems: Record<string, any[]> = {
   researcher: [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
-    { key: '/instruments', icon: <AppstoreOutlined />, label: '仪器列表' },
+    { key: '/reservations/new', icon: <ScheduleOutlined />, label: '新建预约' },
     { key: '/reservations', icon: <ScheduleOutlined />, label: '我的预约' },
-    { key: '/budget', icon: <WalletOutlined />, label: '预算查询' },
+    { key: '/instruments', icon: <AppstoreOutlined />, label: '仪器设备' },
     { key: '/notifications', icon: <BellOutlined />, label: '消息通知' },
+    { key: '/statistics', icon: <BarChartOutlined />, label: '统计分析' },
   ],
   instrument_admin: [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
@@ -38,7 +39,7 @@ const roleMenuItems: Record<string, any[]> = {
   ],
   group_leader: [
     { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
-    { key: '/instruments', icon: <AppstoreOutlined />, label: '仪器列表' },
+    { key: '/instruments', icon: <AppstoreOutlined />, label: '仪器设备' },
     { key: '/reservations', icon: <ScheduleOutlined />, label: '组内预约' },
     { key: '/budget', icon: <WalletOutlined />, label: '预算管理' },
     { key: '/statistics', icon: <BarChartOutlined />, label: '统计分析' },
@@ -46,12 +47,12 @@ const roleMenuItems: Record<string, any[]> = {
     { key: '/notifications', icon: <BellOutlined />, label: '消息通知' },
   ],
   institute_leader: [
-    { key: '/dashboard', icon: <DashboardOutlined />, label: '总览' },
+    { key: '/dashboard', icon: <DashboardOutlined />, label: '工作台' },
     { key: '/instruments', icon: <AppstoreOutlined />, label: '仪器管理' },
-    { key: '/budget', icon: <WalletOutlined />, label: '预算管理' },
     { key: '/statistics', icon: <BarChartOutlined />, label: '统计报表' },
-    { key: '/users', icon: <TeamOutlined />, label: '用户管理' },
+    { key: '/budget', icon: <WalletOutlined />, label: '预算管理' },
     { key: '/maintenance', icon: <ToolOutlined />, label: '维护管理' },
+    { key: '/users', icon: <TeamOutlined />, label: '用户管理' },
     { key: '/notifications', icon: <BellOutlined />, label: '消息通知' },
   ],
   engineer: [
@@ -119,7 +120,8 @@ const MainLayout: React.FC = () => {
   const getSelectedKeys = () => {
     const path = location.pathname;
     if (path.startsWith('/instruments/')) return ['/instruments'];
-    if (path.startsWith('/reservations/')) return ['/reservations'];
+    if (path.startsWith('/reservations/new')) return ['/reservations/new'];
+      if (path.startsWith('/reservations/')) return ['/reservations'];
     return [path];
   };
 
@@ -150,7 +152,7 @@ const MainLayout: React.FC = () => {
           fontWeight: 600,
           background: 'rgba(255,255,255,0.1)',
         }}>
-          {collapsed ? '仪器' : '仪器共享平台'}
+          {collapsed ? '科研' : '科研仪器预约平台'}
         </div>
         <Menu
           theme="dark"

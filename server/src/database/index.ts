@@ -57,6 +57,7 @@ export async function initDatabase() {
       last_maintenance_date TEXT,
       description TEXT,
       image_url TEXT,
+      admin_id TEXT,
       current_temperature REAL,
       temperature_min REAL,
       temperature_max REAL,
