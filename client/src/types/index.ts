@@ -36,6 +36,9 @@ export interface Instrument {
   image_url?: string;
   admin_id?: string;
   admin_name?: string;
+  admin_email?: string;
+  admin_phone?: string;
+  admin_role?: string;
   current_temperature?: number;
   temperature_min?: number;
   temperature_max?: number;
@@ -57,6 +60,8 @@ export interface Reservation {
   cost?: number;
   created_at: string;
   instrument?: Instrument;
+  user_name?: string;
+  group_name?: string;
   user?: User;
   group?: ResearchGroup;
   estimated_cost?: number;

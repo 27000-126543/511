@@ -326,30 +326,36 @@ const Dashboard: React.FC = () => {
             extra={<Button type="link" onClick={() => navigate('/notifications')}>更多 <ArrowRightOutlined /></Button>}
             style={{ marginBottom: 16 }}
           >
-            <List
-              dataSource={notifications}
-              renderItem={(item) => (
-                <List.Item
-                  style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}
-                  onClick={() => navigate('/notifications')}
-                >
-                  <List.Item.Meta
-                    title={
-                      <Space>
-                        {!item.is_read && <span style={{ color: '#f5222d' }}>●</span>}
-                        <span style={{ fontSize: 14 }}>{item.title}</span>
-                      </Space>
-                    }
-                    description={
-                      <div style={{ color: '#999', fontSize: 12 }}>
-                        {item.content}
-                        <div style={{ marginTop: 4 }}>{item.created_at ? dayjs(item.created_at).fromNow() : ""}</div>
-                      </div>
-                    }
-                  />
-                </List.Item>
-              )}
-            />
+            {notifications.length > 0 ? (
+              <List
+                dataSource={notifications}
+                renderItem={(item) => (
+                  <List.Item
+                    style={{ padding: '12px 0', borderBottom: '1px solid #f0f0f0' }}
+                    onClick={() => navigate('/notifications')}
+                  >
+                    <List.Item.Meta
+                      title={
+                        <Space>
+                          {!item.is_read && <span style={{ color: '#f5222d' }}>●</span>}
+                          <span style={{ fontSize: 14 }}>{item.title}</span>
+                        </Space>
+                      }
+                      description={
+                        <div style={{ color: '#999', fontSize: 12 }}>
+                          {item.content}
+                          <div style={{ marginTop: 4 }}>{item.created_at ? dayjs(item.created_at).fromNow() : ""}</div>
+                        </div>
+                      }
+                    />
+                  </List.Item>
+                )}
+              />
+            ) : (
+              <div style={{ textAlign: "center", padding: "30px 0", color: "#999" }}>
+                暂无消息
+              </div>
+            )}
           </Card>
 
           {myReservations.length > 0 && (

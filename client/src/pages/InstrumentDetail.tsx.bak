@@ -39,15 +39,13 @@ const InstrumentDetail: React.FC = () => {
   const [isReservationDetailModal, setIsReservationDetailModal] = useState(false);
   const [selectedReservation, setSelectedReservation] = useState<Reservation | null>(null);
   const [weekStart, setWeekStart] = useState(dayjs().startOf("day"));
-  const [maintenancePlans, setMaintenancePlans] = useState<any[]>([]);
-  const [maintenanceOrders, setMaintenanceOrders] = useState<any[]>([]);
 
 
   useEffect(() => {
     if (id) {
       loadData();
     }
-  }, [id, recommendHours, weekStart]);
+  }, [id, recommendHours]);
 
   useEffect(() => {
     if (!id) return;
@@ -83,33 +81,20 @@ const InstrumentDetail: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const weekEnd = weekStart.add(7, 'day');
-      const [inst, status, reser, recommend, plans, orders] = await Promise.all([
+      const [inst, status, reser, recommend] = await Promise.all([
         instrumentsApi.get(id!),
         statusApi.getRecent(id!, 50),
         reservationsApi.getByInstrument(id!, {
-          start_date: weekStart.toISOString(),
-          end_date: weekEnd.toISOString(),
+          start_date: dayjs().toISOString(),
+          end_date: dayjs().add(7, 'day').toISOString(),
         }),
         reservationsApi.recommend(id!, { duration: recommendHours, days: 7 }),
-        maintenanceApi.getPlans({
-          instrument_id: id,
-          start_date: weekStart.toISOString(),
-          end_date: weekEnd.toISOString(),
-        }).catch(() => []),
-        maintenanceApi.getOrders({
-          instrument_id: id,
-          start_date: weekStart.toISOString(),
-          end_date: weekEnd.toISOString(),
-        }).catch(() => []),
       ]);
 
       setInstrument(inst as Instrument);
       setStatusHistory(status as InstrumentStatus[]);
       setReservations(reser as Reservation[]);
       setRecommendSlots(recommend as RecommendedSlot[]);
-      setMaintenancePlans(Array.isArray(plans) ? plans : (plans as any)?.list || []);
-      setMaintenanceOrders(Array.isArray(orders) ? orders : (orders as any)?.list || []);
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
@@ -153,16 +138,6 @@ const InstrumentDetail: React.FC = () => {
       fault: '故障',
     };
     return map[status] || status;
-  };
-
-  const getStatusColor = (status: string) => {
-    const map: Record<string, string> = {
-      available: 'green',
-      in_use: 'blue',
-      maintenance: 'orange',
-      fault: 'red',
-    };
-    return map[status] || 'default';
   };
 
   const getChartOption = () => {
@@ -247,57 +222,9 @@ const InstrumentDetail: React.FC = () => {
     editForm.setFieldsValue({
       location: instrument?.location,
       hourly_rate: instrument?.hourly_rate,
-      maintenance_cycle_days: instrument?.maintenance_cycle_days,
-      temperature_min: instrument?.temperature_min,
-      temperature_max: instrument?.temperature_max,
       admin_id: instrument?.admin_id,
-      description: instrument?.description,
     });
     setIsEditModal(true);
-  };
-
-  const handleReservationClick = (reservation: Reservation) => {
-    setSelectedReservation(reservation);
-    setIsReservationDetailModal(true);
-  };
-
-  const goToReservation = (day: any) => {
-    navigate(`/reservations/new/${id}`);
-  };
-
-  const getWeekDays = () => {
-    const days = [];
-    for (let i = 0; i < 7; i++) {
-      days.push(weekStart.add(i, 'day'));
-    }
-    return days;
-  };
-
-  const getDayReservations = (day: any) => {
-    return reservations.filter(r => {
-      const start = dayjs(r.start_time);
-      return start.isSame(day, 'day');
-    }).sort((a, b) => dayjs(a.start_time).valueOf() - dayjs(b.start_time).valueOf());
-  };
-
-  const getDayMaintenance = (day: any) => {
-    const dayOrders = maintenanceOrders.filter((o: any) => {
-      const scheduled = dayjs(o.scheduled_date);
-      return scheduled.isSame(day, 'day') && o.status !== 'completed' && o.status !== 'cancelled';
-    });
-    return dayOrders;
-  };
-
-  const handlePrevWeek = () => {
-    setWeekStart(prev => prev.subtract(7, 'day'));
-  };
-
-  const handleNextWeek = () => {
-    setWeekStart(prev => prev.add(7, 'day'));
-  };
-
-  const handleToday = () => {
-    setWeekStart(dayjs().startOf('day'));
   };
 
 
@@ -430,106 +357,6 @@ const InstrumentDetail: React.FC = () => {
             </div>
           </Card>
 
-          <Card 
-            title="预约周视图" 
-            style={{ marginBottom: 16 }}
-            extra={
-              <Space size="small">
-                <Button size="small" onClick={handlePrevWeek}>上一周</Button>
-                <Button size="small" onClick={handleToday}>今天</Button>
-                <Button size="small" onClick={handleNextWeek}>下一周</Button>
-              </Space>
-            }
-          >
-            <Row gutter={8}>
-              {getWeekDays().map(day => {
-                const dayReservations = getDayReservations(day);
-                const dayMaintenance = getDayMaintenance(day);
-                const isToday = day.isSame(dayjs(), 'day');
-                
-                return (
-                  <Col span={24/7} key={day.format('YYYY-MM-DD')} style={{ minHeight: 200 }}>
-                    <div style={{ 
-                      textAlign: 'center', 
-                      fontWeight: 500, 
-                      marginBottom: 8,
-                      padding: '4px 0',
-                      background: isToday ? '#e6f7ff' : 'transparent',
-                      borderRadius: 4,
-                    }}>
-                      <div style={{ fontSize: 14 }}>{day.format('MM/DD')}</div>
-                      <div style={{ fontSize: 12, color: isToday ? '#1890ff' : '#999' }}>
-                        {day.format('ddd')}
-                        {isToday && ' (今天)'}
-                      </div>
-                    </div>
-                    
-                    {dayMaintenance.map((order: any) => (
-                      <div
-                        key={`order-${order.id}`}
-                        style={{
-                          background: '#fa8c16',
-                          color: 'white',
-                          padding: '4px 8px',
-                          borderRadius: 4,
-                          marginBottom: 4,
-                          fontSize: 12,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div style={{ fontWeight: 500 }}>
-                          {dayjs(order.scheduled_date).format('HH:mm')} 维护
-                        </div>
-                        <div style={{ fontSize: 11, opacity: 0.9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {order.description}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {dayReservations.map(r => (
-                      <div
-                        key={r.id}
-                        onClick={() => handleReservationClick(r)}
-                        style={{
-                          background: '#1890ff',
-                          color: 'white',
-                          padding: '4px 8px',
-                          borderRadius: 4,
-                          marginBottom: 4,
-                          fontSize: 12,
-                          cursor: 'pointer',
-                        }}
-                      >
-                        <div style={{ fontWeight: 500 }}>
-                          {dayjs(r.start_time).format('HH:mm')}-{dayjs(r.end_time).format('HH:mm')}
-                        </div>
-                        <div style={{ fontSize: 11, opacity: 0.9, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {r.user_name || '-'}
-                        </div>
-                      </div>
-                    ))}
-                    
-                    <div
-                      onClick={() => goToReservation(day)}
-                      style={{
-                        border: '1px dashed #d9d9d9',
-                        color: '#bfbfbf',
-                        padding: '4px 8px',
-                        borderRadius: 4,
-                        fontSize: 12,
-                        cursor: 'pointer',
-                        textAlign: 'center',
-                        marginTop: 4,
-                      }}
-                    >
-                      + 预约
-                    </div>
-                  </Col>
-                );
-              })}
-            </Row>
-          </Card>
-
           <Card title="仪器信息">
             <Descriptions column={2} bordered size="small">
               <Descriptions.Item label="仪器名称">{instrument.name}</Descriptions.Item>
@@ -557,7 +384,6 @@ const InstrumentDetail: React.FC = () => {
                       <div style={{ fontSize: 12, color: "#666" }}>
                         <PhoneOutlined style={{ marginRight: 4 }} />{instrument.admin_phone}
                       </div>
-                    )}
                     {instrument.admin_email && (
                       <div style={{ fontSize: 12, color: "#666" }}>
                         <MailOutlined style={{ marginRight: 4 }} />{instrument.admin_email}
@@ -568,6 +394,7 @@ const InstrumentDetail: React.FC = () => {
                   <span style={{ color: "#999" }}>未指定管理员</span>
                 )}
               </Descriptions.Item>
+                    )}
             </Descriptions>
           </Card>
         </Col>
@@ -708,12 +535,12 @@ const InstrumentDetail: React.FC = () => {
           </Form.Item>
           <Row gutter={16}>
             <Col span={12}>
-              <Form.Item name="temperature_min" label="温度最小值">
+              <Form.Item name="temp_min" label="温度最小值">
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
             <Col span={12}>
-              <Form.Item name="temperature_max" label="温度最大值">
+              <Form.Item name="temp_max" label="温度最大值">
                 <InputNumber style={{ width: "100%" }} />
               </Form.Item>
             </Col>
@@ -722,7 +549,6 @@ const InstrumentDetail: React.FC = () => {
             <Select placeholder="选择管理员" loading={adminLoading} allowClear
               options={adminUsers.map(u => ({ value: u.id, label: u.name }))}
             />
-          </Form.Item>
           <Form.Item name="description" label="描述">
             <Input.TextArea rows={4} />
           </Form.Item>
@@ -734,8 +560,8 @@ const InstrumentDetail: React.FC = () => {
         footer={null} width={500}>
         {selectedReservation && (
           <Descriptions column={1} size="small">
-            <Descriptions.Item label="预约人">{selectedReservation.user_name || '-'}</Descriptions.Item>
-            <Descriptions.Item label="课题组">{selectedReservation.group_name || '-'}</Descriptions.Item>
+            <Descriptions.Item label="预约人">{selectedReservation.user_name}</Descriptions.Item>
+            <Descriptions.Item label="课题组">{selectedReservation.group_name || "-"}</Descriptions.Item>
             <Descriptions.Item label="用途">{selectedReservation.purpose || "-"}</Descriptions.Item>
             <Descriptions.Item label="状态">
               <Tag color={getStatusColor(selectedReservation.status)}>{getStatusText(selectedReservation.status)}</Tag>

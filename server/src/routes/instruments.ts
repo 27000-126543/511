@@ -39,7 +39,7 @@ router.get('/types', authMiddleware, (req, res) => {
 });
 
 router.get('/:id', authMiddleware, (req, res) => {
-  const instrument = db.prepare('SELECT * FROM instruments WHERE id = ?').get(req.params.id) as Instrument | undefined;
+  const instrument = db.prepare('SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as admin_phone, u.role as admin_role FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE i.id = ?').get(req.params.id) as Instrument | undefined;
   
   if (!instrument) {
     return res.status(404).json({ error: '仪器不存在' });
@@ -65,14 +65,14 @@ router.post('/', authMiddleware, requireRole('instrument_admin', 'institute_lead
   
   stmt.run(id, name, type, model || '', location || '', hourly_rate || 0, maintenance_cycle_days || 30, description || '', temperature_min || 15, temperature_max || 30, admin_id || null, 22, createdAt);
 
-  const newInstrument = db.prepare('SELECT * FROM instruments WHERE id = ?').get(id) as Instrument;
+  const newInstrument = db.prepare('SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as admin_phone, u.role as admin_role FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE i.id = ?').get(id) as Instrument;
   res.status(201).json(newInstrument);
 });
 
 router.put('/:id', authMiddleware, requireRole('instrument_admin', 'institute_leader'), (req: AuthRequest, res) => {
   const { name, type, model, location, status, hourly_rate, maintenance_cycle_days, description, temperature_min, temperature_max, admin_id } = req.body;
 
-  const existing = db.prepare('SELECT * FROM instruments WHERE id = ?').get(req.params.id) as Instrument | undefined;
+  const existing = db.prepare('SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as admin_phone, u.role as admin_role FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE i.id = ?').get(req.params.id) as Instrument | undefined;
   if (!existing) {
     return res.status(404).json({ error: '仪器不存在' });
   }
@@ -100,12 +100,12 @@ router.put('/:id', authMiddleware, requireRole('instrument_admin', 'institute_le
     req.params.id
   );
 
-  const updated = db.prepare('SELECT * FROM instruments WHERE id = ?').get(req.params.id) as Instrument;
+  const updated = db.prepare('SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as admin_phone, u.role as admin_role FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE i.id = ?').get(req.params.id) as Instrument;
   res.json(updated);
 });
 
 router.delete('/:id', authMiddleware, requireRole('instrument_admin', 'institute_leader'), (req: AuthRequest, res) => {
-  const existing = db.prepare('SELECT * FROM instruments WHERE id = ?').get(req.params.id) as Instrument | undefined;
+  const existing = db.prepare('SELECT i.*, u.name as admin_name, u.email as admin_email, u.phone as admin_phone, u.role as admin_role FROM instruments i LEFT JOIN users u ON i.admin_id = u.id WHERE i.id = ?').get(req.params.id) as Instrument | undefined;
   if (!existing) {
     return res.status(404).json({ error: '仪器不存在' });
   }

@@ -43,7 +43,7 @@ router.get('/instrument/:instrumentId', authMiddleware, (req, res) => {
   const { instrumentId } = req.params;
   const { start_date, end_date } = req.query;
 
-  let query = 'SELECT * FROM reservations WHERE instrument_id = ? AND status IN (\'confirmed\', \'in_progress\', \'pending\')';
+  let query = 'SELECT r.*, u.name as user_name, g.name as group_name FROM reservations r LEFT JOIN users u ON r.user_id = u.id LEFT JOIN research_groups g ON r.group_id = g.id WHERE r.instrument_id = ? AND r.status IN (\'confirmed\', \'in_progress\', \'pending\')';
   const params: any[] = [instrumentId];
 
   if (start_date) {
