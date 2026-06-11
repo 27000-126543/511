@@ -185,7 +185,6 @@ const Statistics: React.FC = () => {
             <Statistic
               title="总费用"
               value={groupData?.total_cost || 0}
-              prefix="¥"
               precision={2}
               valueStyle={{ color: '#fa8c16' }}
               prefix={<DollarOutlined />}
@@ -232,7 +231,7 @@ const Statistics: React.FC = () => {
           pagination={false}
           size="small"
           columns={[
-            { title: '排名', dataIndex: 'rank', key: 'rank', width: 60, render: (_, __, index) => index + 1 },
+            { title: '排名', dataIndex: 'rank', key: 'rank', width: 60, render: (_: any, __, index) => index + 1 },
             { title: '成员', dataIndex: 'user_name', key: 'user_name' },
             {
               title: '使用时长',
@@ -249,7 +248,7 @@ const Statistics: React.FC = () => {
             {
               title: '占比',
               key: 'percent',
-              render: (_, record: any) => {
+              render: (_: any, record: any) => {
                 const total = groupData?.total_hours || 1;
                 const percent = (record.hours / total) * 100;
                 return (
@@ -291,7 +290,6 @@ const Statistics: React.FC = () => {
             <Statistic
               title="总收入"
               value={instituteData?.overview?.total_revenue || 0}
-              prefix="¥"
               precision={2}
               valueStyle={{ color: '#52c41a' }}
               prefix={<DollarOutlined />}
@@ -347,7 +345,7 @@ const Statistics: React.FC = () => {
             {
               title: '预算',
               key: 'budget',
-              render: (_, record: any) => (
+              render: (_: any, record: any) => (
                 <div>
                   <div style={{ fontSize: 12 }}>¥{record.budget_remaining?.toFixed(0)} / ¥{record.budget?.toFixed(0)}</div>
                   <Progress percent={record.budget_percent || 0} size="small" showInfo={false} />

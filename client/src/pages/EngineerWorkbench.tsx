@@ -30,7 +30,7 @@ const EngineerWorkbench: React.FC = () => {
   const loadOrders = async () => {
     setLoading(true);
     try {
-      let status = activeTab;
+      let status: string = activeTab;
       if (activeTab === 'pending') status = 'assigned';
       const data = await maintenanceApi.getOrders({ status });
       setOrders(data as WorkOrder[]);

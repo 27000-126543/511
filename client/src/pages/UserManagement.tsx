@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
   Card, Table, Button, Modal, Form, Input, Select, message,
-  Space, Tag, InputNumber,
+  Space, Tag, InputNumber, Row, Col,
 } from 'antd';
 import { PlusOutlined, EditOutlined, DeleteOutlined, UserOutlined, TeamOutlined } from '@ant-design/icons';
 import { usersApi } from '../api';
@@ -202,7 +202,7 @@ const UserManagement: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 150,
-      render: (_, record: User) => (
+      render: (_: any, record: User) => (
         <Space size="small">
           {canManage && (
             <>
@@ -227,7 +227,7 @@ const UserManagement: React.FC = () => {
     {
       title: '剩余',
       key: 'remaining',
-      render: (_, record: any) => `¥${(record.budget - record.budget_used).toLocaleString()}`,
+      render: (_: any, record: any) => `¥${(record.budget - record.budget_used).toLocaleString()}`,
     },
   ];
 

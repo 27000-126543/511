@@ -3,9 +3,9 @@ import axios from 'axios';
 const api = axios.create({
   baseURL: '/api',
   timeout: 10000,
-});
+}) as any;
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: any) => {
   const token = localStorage.getItem('token');
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
@@ -14,8 +14,8 @@ api.interceptors.request.use((config) => {
 });
 
 api.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
+  (response: any) => response.data,
+  (error: any) => {
     if (error.response?.status === 401) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');

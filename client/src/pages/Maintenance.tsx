@@ -275,7 +275,7 @@ const Maintenance: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_, record: WorkOrder) => (
+      render: (_: any, record: WorkOrder) => (
         <Space size="small">
           {canManage && record.status === 'pending' && (
             <Button type="link" size="small" onClick={() => handleAssign(record)}>

@@ -156,7 +156,7 @@ const Reservations: React.FC = () => {
     {
       title: '预约时间',
       key: 'time',
-      render: (_, record: Reservation) => (
+      render: (_: any, record: Reservation) => (
         <Space direction="vertical" size={0}>
           <span>{dayjs(record.start_time).format('YYYY-MM-DD HH:mm')}</span>
           <span style={{ color: '#999', fontSize: 12 }}>
@@ -197,7 +197,7 @@ const Reservations: React.FC = () => {
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_, record: Reservation) => (
+      render: (_: any, record: Reservation) => (
         <Space size="small">
           <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => handleViewDetail(record.id)}>
             详情

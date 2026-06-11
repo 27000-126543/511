@@ -202,9 +202,12 @@ const Instruments: React.FC = () => {
       <Modal
         title="添加仪器"
         open={isModalVisible}
-        onOk
-        onCancel={() => setIsModalVisible(false)}
-        onOk={handleOk}
+        onOk={handleModalOk}
+        onCancel={() => {
+          setIsModalVisible(false);
+          form.resetFields();
+        }}
+        afterClose={() => form.resetFields()}
         width={600}
       >
         <Form form={form} layout="vertical">
